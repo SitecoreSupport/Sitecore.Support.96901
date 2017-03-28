@@ -3,8 +3,6 @@
     using Sitecore.ContentSearch;
     using Sitecore.ContentSearch.Abstractions;
     using Sitecore.ContentSearch.Client.Pipelines.Search;
-    using Sitecore.ContentSearch.Diagnostics;
-    using Sitecore.ContentSearch.Exceptions;
     using Sitecore.ContentSearch.SearchTypes;
     using Sitecore.ContentSearch.Security;
     using Sitecore.ContentSearch.Utilities;
@@ -42,7 +40,7 @@
             Assert.ArgumentNotNull(args, "args");
             if (!args.UseLegacySearchEngine)
             {
-                if (!ContentSearchManager.Locator.GetInstance<IContentSearchConfigurationSettings>().ContentSearchEnabled())
+                if (!ContentSearchManager.Locator.GetInstance<IContentSearchConfigurationSettings>().ItemBucketsEnabled())
                 {
                     args.UseLegacySearchEngine = true;
                 }
@@ -52,16 +50,7 @@
                     Assert.IsNotNull(item, "rootItem");
                     if (!args.TextQuery.IsNullOrEmpty())
                     {
-                        ISearchIndex index;
-                        try
-                        {
-                            index = ContentSearchManager.GetIndex(new SitecoreIndexableItem(item));
-                        }
-                        catch (IndexNotFoundException)
-                        {
-                            SearchLog.Log.Warn("No index found for " + item.ID, null);
-                            return;
-                        }
+                        ISearchIndex index = ContentSearchManager.GetIndex(new SitecoreIndexableItem(item));
                         if (this.settings == null)
                         {
                             this.settings = index.Locator.GetInstance<ISettings>();
