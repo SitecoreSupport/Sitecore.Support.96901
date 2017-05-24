@@ -220,7 +220,7 @@ namespace Sitecore.Support.ContentSearch.Client.Pipelines.Search
                     continue;
                 }
 
-                object icon = result.Fields.Find(pair => pair.Key == BuiltinFields.Icon).Value
+                object icon = result.Fields.Find(pair => pair.Key == Sitecore.ContentSearch.BuiltinFields.Icon).Value
                             ?? sitecoreItem.Appearance.Icon ?? this.settings?.DefaultIcon();
 
                 if (icon == null)
