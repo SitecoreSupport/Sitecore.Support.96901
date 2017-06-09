@@ -61,37 +61,30 @@
                             List<SitecoreUISearchResultItem> results = new List<SitecoreUISearchResultItem>();
                             try
                             {
-                                IQueryable<SitecoreUISearchResultItem> source = null;
-                                if (args.Type != SearchType.ContentEditor)
+                                IQueryable<SitecoreUISearchResultItem> queryable;
+                                if ((args.ContentLanguage != null) && !args.ContentLanguage.Name.IsNullOrEmpty())
                                 {
-                                    source = new GenericSearchIndex().Search(args, context);
+                                    queryable = from i in context.GetQueryable<SitecoreUISearchResultItem>()
+                                                where i.Name.StartsWith(args.TextQuery) || (i.Content.Contains(args.TextQuery) && i.Language.Equals(args.ContentLanguage.Name))
+                                                select i;
                                 }
-                                if ((source == null) || (source.Count<SitecoreUISearchResultItem>() == 0))
+                                else
                                 {
-                                    if ((args.ContentLanguage != null) && !args.ContentLanguage.Name.IsNullOrEmpty())
-                                    {
-                                        source = from i in context.GetQueryable<SitecoreUISearchResultItem>()
-                                                 where i.Name.StartsWith(args.TextQuery) || (i.Content.Contains(args.TextQuery) && i.Language.Equals(args.ContentLanguage.Name))
-                                                 select i;
-                                    }
-                                    else
-                                    {
-                                        source = from i in context.GetQueryable<SitecoreUISearchResultItem>()
-                                                 where i.Name.StartsWith(args.TextQuery) || i.Content.Contains(args.TextQuery)
-                                                 select i;
-                                    }
+                                    queryable = from i in context.GetQueryable<SitecoreUISearchResultItem>()
+                                                where i.Name.StartsWith(args.TextQuery) || i.Content.Contains(args.TextQuery)
+                                                select i;
                                 }
                                 if ((args.Root != null) && (args.Type != SearchType.ContentEditor))
                                 {
-                                    source = from i in source
-                                             where i.Paths.Contains(args.Root.ID)
-                                             select i;
+                                    queryable = from i in queryable
+                                                where i.Paths.Contains(args.Root.ID)
+                                                select i;
                                 }
                                 if (predicate == null)
                                 {
                                     predicate = result => results.Count < args.Limit;
                                 }
-                                using (IEnumerator<SitecoreUISearchResultItem> enumerator = source.TakeWhile<SitecoreUISearchResultItem>(predicate).GetEnumerator())
+                                using (IEnumerator<SitecoreUISearchResultItem> enumerator = queryable.TakeWhile<SitecoreUISearchResultItem>(predicate).GetEnumerator())
                                 {
                                     while (enumerator.MoveNext())
                                     {
@@ -165,5 +158,8 @@
                 }
             }
         }
+
+
+
     }
 }
