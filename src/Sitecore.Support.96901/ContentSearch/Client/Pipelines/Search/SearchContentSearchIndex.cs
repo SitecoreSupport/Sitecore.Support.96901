@@ -35,6 +35,42 @@
             return (item.Appearance.Hidden || ((item.Parent != null) && this.IsHidden(item.Parent)));
         }
 
+        protected virtual void FillSearchResult(IList<SitecoreUISearchResultItem> searchResult, SearchArgs args)
+        {
+            foreach (var result in searchResult)
+            {
+                if (result.GetItem() == null)
+                {
+                    // item either does not exist or security protected.
+                    // According to the requirements from management, defined in the TFS:96901
+                    // processor should not return non-Sitecore items.
+                    continue;
+                }
+
+                var title = result.DisplayName ?? result.Name;
+                if (title == null)
+                {
+                    continue;
+                }
+
+                object icon = result.Fields.Find(pair => pair.Key == Sitecore.ContentSearch.BuiltinFields.Icon).Value
+                            ?? (result.GetItem() != null ? result.GetItem().Appearance.Icon : null) ?? this.settings.DefaultIcon();
+
+                if (icon == null)
+                {
+                    continue;
+                }
+
+                string url = string.Empty;
+                if (result.Uri != null)
+                {
+                    url = result.Uri.ToString();
+                }
+
+                args.Result.AddResult(new SearchResult(title, icon.ToString(), url));
+            }
+        }
+
         public virtual void Process(SearchArgs args)
         {
             Assert.ArgumentNotNull(args, "args");
@@ -146,20 +182,7 @@
                                 Log.Error("Invalid lucene search query: " + args.TextQuery, exception, this);
                                 return;
                             }
-                            foreach (SitecoreUISearchResultItem item4 in results)
-                            {
-                                if (item4.GetItem() != null)
-                                {
-                                    string title = item4.DisplayName ?? item4.Name;
-                                    object obj2 = item4.Fields.Find(pair => pair.Key == Sitecore.Search.BuiltinFields.Icon).Value ?? (item4.GetItem().Appearance.Icon ?? this.settings.DefaultIcon());
-                                    string url = string.Empty;
-                                    if (item4.Uri != null)
-                                    {
-                                        url = item4.Uri.ToString();
-                                    }
-                                    args.Result.AddResult(new SearchResult(title, obj2.ToString(), url)); 
-                                }
-                            }
+                            this.FillSearchResult(results, args);
                         }
                     }
                 }
