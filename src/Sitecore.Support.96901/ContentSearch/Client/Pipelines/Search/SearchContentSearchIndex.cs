@@ -39,7 +39,8 @@
         {
             foreach (var result in searchResult)
             {
-                if (result.GetItem() == null)
+                var sitecoreItem = this.GetSitecoreItem(result);
+                if (sitecoreItem == null)
                 {
                     // item either does not exist or security protected.
                     // According to the requirements from management, defined in the TFS:96901
@@ -54,7 +55,7 @@
                 }
 
                 object icon = result.Fields.Find(pair => pair.Key == Sitecore.ContentSearch.BuiltinFields.Icon).Value
-                            ?? (result.GetItem() != null ? result.GetItem().Appearance.Icon : null) ?? this.settings.DefaultIcon();
+                            ?? sitecoreItem.Appearance.Icon ?? this.settings.DefaultIcon();
 
                 if (icon == null)
                 {
@@ -69,6 +70,24 @@
 
                 args.Result.AddResult(new SearchResult(title, icon.ToString(), url));
             }
+        }
+
+        protected virtual Item GetSitecoreItem(SitecoreUISearchResultItem searchItem)
+        {
+            if (searchItem == null)
+            {
+                return null;
+            }
+
+            try
+            {
+                return searchItem.GetItem();
+            }
+            catch (NullReferenceException)
+            {
+            }
+
+            return null;
         }
 
         public virtual void Process(SearchArgs args)
@@ -135,7 +154,7 @@
                                         SitecoreUISearchResultItem result = enumerator.Current;
                                         if (!UserOptions.View.ShowHiddenItems)
                                         {
-                                            Item item2 = result.GetItem();
+                                            var item2 = this.GetSitecoreItem(result);
                                             if ((item2 != null) && this.IsHidden(item2))
                                             {
                                                 continue;
